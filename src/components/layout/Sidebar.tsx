@@ -12,6 +12,13 @@ import {
   Puzzle,
   Users,
   Settings,
+  BarChart3,
+  Footprints,
+  Flame,
+  Users2,
+  Route,
+  Smile,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -32,6 +39,16 @@ const mainNav: NavItem[] = [
   { label: "Monitor", href: "/dashboard/monitor", icon: Monitor },
 ];
 
+const analyticsNav: NavItem[] = [
+  { label: "Overview", href: "/dashboard/analytics", icon: BarChart3 },
+  { label: "Foot Traffic", href: "/dashboard/analytics/traffic", icon: Footprints },
+  { label: "Heatmaps", href: "/dashboard/analytics/heatmaps", icon: Flame },
+  { label: "Queues", href: "/dashboard/analytics/queues", icon: Users2 },
+  { label: "Journey", href: "/dashboard/analytics/journey", icon: Route },
+  { label: "Satisfaction", href: "/dashboard/analytics/satisfaction", icon: Smile },
+  { label: "Performance", href: "/dashboard/analytics/performance", icon: TrendingUp },
+];
+
 const bottomNav: NavItem[] = [
   { label: "Alert Rules", href: "/dashboard/alert-rules", icon: ShieldAlert },
   { label: "Protocols", href: "/dashboard/protocols", icon: Zap },
@@ -47,6 +64,7 @@ export function Sidebar() {
 
   function isActive(href: string) {
     if (href === "/dashboard") return pathname === "/dashboard";
+    if (href === "/dashboard/analytics") return pathname === "/dashboard/analytics";
     return pathname.startsWith(href);
   }
 
@@ -120,6 +138,21 @@ export function Sidebar() {
               Add Store
             </Link>
           </Button>
+
+          <Separator className="my-3" />
+
+          {/* Analytics section */}
+          <span className="mb-1 px-3 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Analytics
+          </span>
+
+          {analyticsNav.map((item) => (
+            <NavLink
+              key={item.href}
+              item={item}
+              active={isActive(item.href)}
+            />
+          ))}
 
           <Separator className="my-3" />
 

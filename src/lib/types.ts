@@ -211,3 +211,146 @@ export interface CameraTemplate {
   defaultChannel: string;
   streamQualities: string[];
 }
+
+// =============================================================================
+// Analytics Types
+// =============================================================================
+
+/** Hourly foot-traffic entry/exit counts */
+export interface HourlyTraffic {
+  hour: string;
+  entries: number;
+  exits: number;
+}
+
+/** Daily aggregated visitor data */
+export interface DailyTraffic {
+  date: string;
+  visitors: number;
+  entries: number;
+  exits: number;
+}
+
+/** Per-store traffic summary with hourly breakdown */
+export interface TrafficByStore {
+  storeId: string;
+  storeName: string;
+  todayVisitors: number;
+  yesterdayVisitors: number;
+  weeklyAvg: number;
+  peakHour: string;
+  hourlyData: HourlyTraffic[];
+}
+
+/** Queue length snapshot at a point in time */
+export interface QueueSnapshot {
+  timestamp: string;
+  queueLength: number;
+  avgWaitMinutes: number;
+}
+
+/** Queue status levels */
+export type QueueStatus = "normal" | "busy" | "critical";
+
+/** A monitored queue point (e.g. checkout lane) */
+export interface QueuePoint {
+  id: string;
+  storeId: string;
+  storeName: string;
+  name: string;
+  cameraId: string;
+  currentLength: number;
+  avgWaitMinutes: number;
+  maxWaitMinutes: number;
+  status: QueueStatus;
+  snapshots: QueueSnapshot[];
+}
+
+/** Activity data for a single store zone */
+export interface ZoneActivity {
+  zoneId: string;
+  zoneName: string;
+  activityLevel: number;
+  dwellTimeAvg: number;
+  visitorCount: number;
+}
+
+/** Store-level heatmap with zones and intensity grid */
+export interface StoreHeatmapData {
+  storeId: string;
+  storeName: string;
+  zones: ZoneActivity[];
+  grid: number[][];
+}
+
+/** A transition between two store zones */
+export interface JourneyTransition {
+  fromZone: string;
+  toZone: string;
+  count: number;
+  avgDurationSeconds: number;
+}
+
+/** Customer journey data for a store */
+export interface JourneyData {
+  storeId: string;
+  storeName: string;
+  transitions: JourneyTransition[];
+  topPaths: { path: string[]; percentage: number }[];
+  avgVisitDuration: number;
+  avgZonesVisited: number;
+}
+
+/** Individual survey response */
+export interface SurveyResponse {
+  id: string;
+  storeId: string;
+  storeName: string;
+  date: string;
+  score: number;
+  comment: string | null;
+  channel: "qr" | "email" | "sms";
+}
+
+/** NPS data per store with monthly trend */
+export interface NPSData {
+  storeId: string;
+  storeName: string;
+  npsScore: number;
+  promoters: number;
+  passives: number;
+  detractors: number;
+  totalResponses: number;
+  trend: { month: string; nps: number }[];
+}
+
+/** Store-level performance metrics with daily breakdown */
+export interface StorePerformance {
+  storeId: string;
+  storeName: string;
+  visitors: number;
+  transactions: number;
+  conversionRate: number;
+  avgDwellTime: number;
+  revenuePerVisitor: number;
+  dailyData: {
+    date: string;
+    visitors: number;
+    transactions: number;
+    conversionRate: number;
+  }[];
+}
+
+/** Analytics overview summary */
+export interface AnalyticsSummary {
+  totalVisitorsToday: number;
+  totalVisitorsWeek: number;
+  avgConversionRate: number;
+  avgNPS: number;
+  avgDwellTime: number;
+  busiestStore: string;
+  busiestHour: string;
+  activeQueues: number;
+  criticalQueues: number;
+  weeklyTrend: { date: string; visitors: number }[];
+}

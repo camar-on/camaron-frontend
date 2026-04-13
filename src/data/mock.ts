@@ -12,6 +12,15 @@ import type {
   DashboardStats,
   NotificationSettings,
   CameraTemplate,
+  TrafficByStore,
+  DailyTraffic,
+  QueuePoint,
+  StoreHeatmapData,
+  JourneyData,
+  NPSData,
+  SurveyResponse,
+  StorePerformance,
+  AnalyticsSummary,
 } from "@/lib/types";
 
 // =============================================================================
@@ -303,6 +312,278 @@ export const notificationSettings: NotificationSettings = {
 // =============================================================================
 // Camera Templates
 // =============================================================================
+
+// =============================================================================
+// Analytics — Foot Traffic
+// =============================================================================
+
+const generateHourlyData = (base: number) =>
+  Array.from({ length: 14 }, (_, i) => {
+    const hour = (8 + i).toString().padStart(2, "0") + ":00";
+    const factor = i < 3 ? 0.4 : i < 6 ? 0.8 : i < 9 ? 1.0 : i < 12 ? 0.7 : 0.3;
+    const entries = Math.round(base * factor * (0.85 + Math.random() * 0.3));
+    const exits = Math.round(entries * (0.75 + Math.random() * 0.4));
+    return { hour, entries, exits };
+  });
+
+export const trafficByStore: TrafficByStore[] = [
+  { storeId: "sto_01", storeName: "Sucursal Centro", todayVisitors: 847, yesterdayVisitors: 792, weeklyAvg: 810, peakHour: "13:00", hourlyData: generateHourlyData(80) },
+  { storeId: "sto_02", storeName: "Sucursal Sur", todayVisitors: 623, yesterdayVisitors: 658, weeklyAvg: 640, peakHour: "14:00", hourlyData: generateHourlyData(60) },
+  { storeId: "sto_03", storeName: "Bodega Norte", todayVisitors: 124, yesterdayVisitors: 118, weeklyAvg: 115, peakHour: "10:00", hourlyData: generateHourlyData(15) },
+];
+
+export const dailyTraffic: DailyTraffic[] = Array.from({ length: 30 }, (_, i) => {
+  const d = new Date(Date.UTC(2026, 2, 26) - i * 86_400_000);
+  const dateStr = d.toISOString().slice(0, 10);
+  const base = 1400 + Math.round(Math.sin(i * 0.5) * 200 + Math.random() * 150);
+  return { date: dateStr, visitors: base, entries: Math.round(base * 1.05), exits: Math.round(base * 0.98) };
+});
+
+// =============================================================================
+// Analytics — Queue Management
+// =============================================================================
+
+const generateSnapshots = (avgLen: number) =>
+  Array.from({ length: 12 }, (_, i) => ({
+    timestamp: ago(i * 15),
+    queueLength: Math.max(0, Math.round(avgLen + (Math.random() - 0.5) * avgLen * 0.8)),
+    avgWaitMinutes: Math.round((avgLen * 2.5 + (Math.random() - 0.5) * 3) * 10) / 10,
+  }));
+
+export const queuePoints: QueuePoint[] = [
+  { id: "q_01", storeId: "sto_01", storeName: "Sucursal Centro", name: "Caja 1", cameraId: "cam_02", currentLength: 4, avgWaitMinutes: 6.2, maxWaitMinutes: 12, status: "normal", snapshots: generateSnapshots(4) },
+  { id: "q_02", storeId: "sto_01", storeName: "Sucursal Centro", name: "Caja 2", cameraId: "cam_03", currentLength: 8, avgWaitMinutes: 11.5, maxWaitMinutes: 18, status: "busy", snapshots: generateSnapshots(7) },
+  { id: "q_03", storeId: "sto_02", storeName: "Sucursal Sur", name: "Caja Principal", cameraId: "cam_06", currentLength: 3, avgWaitMinutes: 4.8, maxWaitMinutes: 9, status: "normal", snapshots: generateSnapshots(3) },
+  { id: "q_04", storeId: "sto_02", storeName: "Sucursal Sur", name: "Servicio al Cliente", cameraId: "cam_08", currentLength: 11, avgWaitMinutes: 15.3, maxWaitMinutes: 25, status: "critical", snapshots: generateSnapshots(10) },
+];
+
+// =============================================================================
+// Analytics — Heatmaps
+// =============================================================================
+
+export const storeHeatmaps: StoreHeatmapData[] = [
+  {
+    storeId: "sto_01", storeName: "Sucursal Centro",
+    zones: [
+      { zoneId: "z01", zoneName: "Entrada", activityLevel: 95, dwellTimeAvg: 15, visitorCount: 820 },
+      { zoneId: "z02", zoneName: "Pasillo Central", activityLevel: 78, dwellTimeAvg: 45, visitorCount: 650 },
+      { zoneId: "z03", zoneName: "Electrónicos", activityLevel: 62, dwellTimeAvg: 120, visitorCount: 340 },
+      { zoneId: "z04", zoneName: "Ropa", activityLevel: 55, dwellTimeAvg: 90, visitorCount: 290 },
+      { zoneId: "z05", zoneName: "Cajas", activityLevel: 85, dwellTimeAvg: 180, visitorCount: 710 },
+      { zoneId: "z06", zoneName: "Bodega", activityLevel: 12, dwellTimeAvg: 30, visitorCount: 45 },
+    ],
+    grid: [
+      [95, 85, 60, 45, 30, 20, 15, 10],
+      [90, 78, 65, 55, 40, 35, 25, 12],
+      [70, 62, 58, 50, 45, 42, 30, 15],
+      [55, 50, 48, 55, 60, 55, 35, 18],
+      [40, 45, 50, 62, 70, 65, 40, 20],
+      [85, 80, 75, 70, 85, 80, 50, 12],
+    ],
+  },
+  {
+    storeId: "sto_02", storeName: "Sucursal Sur",
+    zones: [
+      { zoneId: "z07", zoneName: "Entrada", activityLevel: 88, dwellTimeAvg: 12, visitorCount: 600 },
+      { zoneId: "z08", zoneName: "Promociones", activityLevel: 72, dwellTimeAvg: 60, visitorCount: 420 },
+      { zoneId: "z09", zoneName: "Alimentos", activityLevel: 80, dwellTimeAvg: 75, visitorCount: 510 },
+      { zoneId: "z10", zoneName: "Hogar", activityLevel: 45, dwellTimeAvg: 95, visitorCount: 210 },
+      { zoneId: "z11", zoneName: "Cajas", activityLevel: 82, dwellTimeAvg: 150, visitorCount: 560 },
+      { zoneId: "z12", zoneName: "Estacionamiento", activityLevel: 65, dwellTimeAvg: 20, visitorCount: 580 },
+    ],
+    grid: [
+      [88, 80, 55, 40, 35, 25, 20, 65],
+      [82, 72, 60, 50, 45, 38, 30, 60],
+      [75, 68, 80, 70, 55, 42, 35, 50],
+      [60, 55, 75, 65, 50, 45, 38, 40],
+      [50, 48, 60, 55, 48, 42, 35, 35],
+      [82, 78, 72, 68, 82, 75, 50, 30],
+    ],
+  },
+  {
+    storeId: "sto_03", storeName: "Bodega Norte",
+    zones: [
+      { zoneId: "z13", zoneName: "Acceso Carga", activityLevel: 70, dwellTimeAvg: 25, visitorCount: 95 },
+      { zoneId: "z14", zoneName: "Almacén A", activityLevel: 45, dwellTimeAvg: 300, visitorCount: 40 },
+      { zoneId: "z15", zoneName: "Almacén B", activityLevel: 35, dwellTimeAvg: 240, visitorCount: 30 },
+      { zoneId: "z16", zoneName: "Oficina", activityLevel: 55, dwellTimeAvg: 180, visitorCount: 25 },
+    ],
+    grid: [
+      [70, 60, 45, 35, 30, 25, 20, 15],
+      [65, 55, 45, 40, 35, 30, 22, 12],
+      [50, 45, 40, 35, 35, 28, 20, 10],
+      [40, 38, 35, 55, 50, 35, 18, 8],
+      [30, 28, 30, 45, 40, 30, 15, 8],
+      [25, 22, 25, 35, 30, 25, 12, 5],
+    ],
+  },
+];
+
+// =============================================================================
+// Analytics — Customer Journey
+// =============================================================================
+
+export const journeyData: JourneyData[] = [
+  {
+    storeId: "sto_01", storeName: "Sucursal Centro",
+    transitions: [
+      { fromZone: "Entrada", toZone: "Pasillo Central", count: 680, avgDurationSeconds: 30 },
+      { fromZone: "Pasillo Central", toZone: "Electrónicos", count: 310, avgDurationSeconds: 45 },
+      { fromZone: "Pasillo Central", toZone: "Ropa", count: 260, avgDurationSeconds: 40 },
+      { fromZone: "Electrónicos", toZone: "Cajas", count: 220, avgDurationSeconds: 60 },
+      { fromZone: "Ropa", toZone: "Cajas", count: 180, avgDurationSeconds: 55 },
+      { fromZone: "Pasillo Central", toZone: "Cajas", count: 150, avgDurationSeconds: 35 },
+      { fromZone: "Cajas", toZone: "Entrada", count: 540, avgDurationSeconds: 25 },
+      { fromZone: "Electrónicos", toZone: "Ropa", count: 80, avgDurationSeconds: 50 },
+    ],
+    topPaths: [
+      { path: ["Entrada", "Pasillo Central", "Electrónicos", "Cajas", "Entrada"], percentage: 28 },
+      { path: ["Entrada", "Pasillo Central", "Ropa", "Cajas", "Entrada"], percentage: 22 },
+      { path: ["Entrada", "Pasillo Central", "Cajas", "Entrada"], percentage: 18 },
+      { path: ["Entrada", "Pasillo Central", "Electrónicos", "Ropa", "Cajas", "Entrada"], percentage: 10 },
+    ],
+    avgVisitDuration: 22,
+    avgZonesVisited: 3.4,
+  },
+  {
+    storeId: "sto_02", storeName: "Sucursal Sur",
+    transitions: [
+      { fromZone: "Entrada", toZone: "Promociones", count: 380, avgDurationSeconds: 25 },
+      { fromZone: "Entrada", toZone: "Alimentos", count: 280, avgDurationSeconds: 30 },
+      { fromZone: "Promociones", toZone: "Alimentos", count: 210, avgDurationSeconds: 40 },
+      { fromZone: "Alimentos", toZone: "Cajas", count: 350, avgDurationSeconds: 50 },
+      { fromZone: "Promociones", toZone: "Hogar", count: 120, avgDurationSeconds: 45 },
+      { fromZone: "Hogar", toZone: "Cajas", count: 100, avgDurationSeconds: 55 },
+      { fromZone: "Cajas", toZone: "Estacionamiento", count: 420, avgDurationSeconds: 20 },
+    ],
+    topPaths: [
+      { path: ["Entrada", "Promociones", "Alimentos", "Cajas", "Estacionamiento"], percentage: 32 },
+      { path: ["Entrada", "Alimentos", "Cajas", "Estacionamiento"], percentage: 25 },
+      { path: ["Entrada", "Promociones", "Hogar", "Cajas", "Estacionamiento"], percentage: 15 },
+    ],
+    avgVisitDuration: 18,
+    avgZonesVisited: 3.1,
+  },
+];
+
+// =============================================================================
+// Analytics — Customer Satisfaction (NPS)
+// =============================================================================
+
+export const npsData: NPSData[] = [
+  {
+    storeId: "sto_01", storeName: "Sucursal Centro", npsScore: 42,
+    promoters: 156, passives: 78, detractors: 52, totalResponses: 286,
+    trend: [
+      { month: "2025-10", nps: 35 }, { month: "2025-11", nps: 38 },
+      { month: "2025-12", nps: 40 }, { month: "2026-01", nps: 36 },
+      { month: "2026-02", nps: 44 }, { month: "2026-03", nps: 42 },
+    ],
+  },
+  {
+    storeId: "sto_02", storeName: "Sucursal Sur", npsScore: 55,
+    promoters: 190, passives: 60, detractors: 38, totalResponses: 288,
+    trend: [
+      { month: "2025-10", nps: 48 }, { month: "2025-11", nps: 50 },
+      { month: "2025-12", nps: 52 }, { month: "2026-01", nps: 54 },
+      { month: "2026-02", nps: 58 }, { month: "2026-03", nps: 55 },
+    ],
+  },
+  {
+    storeId: "sto_03", storeName: "Bodega Norte", npsScore: 28,
+    promoters: 22, passives: 18, detractors: 15, totalResponses: 55,
+    trend: [
+      { month: "2025-10", nps: 20 }, { month: "2025-11", nps: 25 },
+      { month: "2025-12", nps: 30 }, { month: "2026-01", nps: 22 },
+      { month: "2026-02", nps: 32 }, { month: "2026-03", nps: 28 },
+    ],
+  },
+];
+
+export const surveyResponses: SurveyResponse[] = [
+  { id: "srv_01", storeId: "sto_01", storeName: "Sucursal Centro", date: daysAgo(1), score: 9, comment: "Excelente atención, todo muy rápido.", channel: "qr" },
+  { id: "srv_02", storeId: "sto_01", storeName: "Sucursal Centro", date: daysAgo(1), score: 7, comment: "Buena experiencia, las filas un poco largas.", channel: "email" },
+  { id: "srv_03", storeId: "sto_02", storeName: "Sucursal Sur", date: daysAgo(1), score: 10, comment: "Me encantó la sección de promociones.", channel: "qr" },
+  { id: "srv_04", storeId: "sto_02", storeName: "Sucursal Sur", date: daysAgo(2), score: 8, comment: null, channel: "sms" },
+  { id: "srv_05", storeId: "sto_01", storeName: "Sucursal Centro", date: daysAgo(2), score: 3, comment: "Muy lenta la caja, esperé 20 minutos.", channel: "qr" },
+  { id: "srv_06", storeId: "sto_03", storeName: "Bodega Norte", date: daysAgo(2), score: 6, comment: "Difícil encontrar productos sin señalización.", channel: "email" },
+  { id: "srv_07", storeId: "sto_02", storeName: "Sucursal Sur", date: daysAgo(3), score: 9, comment: "El personal muy amable.", channel: "qr" },
+  { id: "srv_08", storeId: "sto_01", storeName: "Sucursal Centro", date: daysAgo(3), score: 8, comment: "Buen surtido de productos.", channel: "sms" },
+  { id: "srv_09", storeId: "sto_03", storeName: "Bodega Norte", date: daysAgo(3), score: 4, comment: "No hay suficiente personal.", channel: "qr" },
+  { id: "srv_10", storeId: "sto_02", storeName: "Sucursal Sur", date: daysAgo(4), score: 10, comment: "Siempre vengo aquí, la mejor sucursal.", channel: "email" },
+  { id: "srv_11", storeId: "sto_01", storeName: "Sucursal Centro", date: daysAgo(4), score: 5, comment: "El estacionamiento estaba lleno.", channel: "qr" },
+  { id: "srv_12", storeId: "sto_02", storeName: "Sucursal Sur", date: daysAgo(5), score: 9, comment: null, channel: "sms" },
+  { id: "srv_13", storeId: "sto_03", storeName: "Bodega Norte", date: daysAgo(5), score: 7, comment: "Precios buenos pero falta variedad.", channel: "qr" },
+  { id: "srv_14", storeId: "sto_01", storeName: "Sucursal Centro", date: daysAgo(6), score: 8, comment: "Rápida atención en caja.", channel: "email" },
+  { id: "srv_15", storeId: "sto_02", storeName: "Sucursal Sur", date: daysAgo(6), score: 2, comment: "Producto dañado y no quisieron cambiar.", channel: "qr" },
+];
+
+// =============================================================================
+// Analytics — Store Performance
+// =============================================================================
+
+const generateDailyPerformance = (baseVisitors: number, baseConversion: number) =>
+  Array.from({ length: 14 }, (_, i) => {
+    const d = new Date(Date.UTC(2026, 2, 26) - i * 86_400_000);
+    const visitors = Math.round(baseVisitors * (0.85 + Math.random() * 0.3));
+    const conversionRate = Math.round((baseConversion + (Math.random() - 0.5) * 8) * 10) / 10;
+    const transactions = Math.round(visitors * conversionRate / 100);
+    return { date: d.toISOString().slice(0, 10), visitors, transactions, conversionRate };
+  });
+
+export const storePerformances: StorePerformance[] = [
+  { storeId: "sto_01", storeName: "Sucursal Centro", visitors: 847, transactions: 312, conversionRate: 36.8, avgDwellTime: 22, revenuePerVisitor: 185, dailyData: generateDailyPerformance(120, 37) },
+  { storeId: "sto_02", storeName: "Sucursal Sur", visitors: 623, transactions: 268, conversionRate: 43.0, avgDwellTime: 18, revenuePerVisitor: 210, dailyData: generateDailyPerformance(90, 43) },
+  { storeId: "sto_03", storeName: "Bodega Norte", visitors: 124, transactions: 31, conversionRate: 25.0, avgDwellTime: 35, revenuePerVisitor: 420, dailyData: generateDailyPerformance(18, 25) },
+];
+
+// =============================================================================
+// Analytics — Summary
+// =============================================================================
+
+export const analyticsSummary: AnalyticsSummary = {
+  totalVisitorsToday: 1594,
+  totalVisitorsWeek: 10780,
+  avgConversionRate: 34.9,
+  avgNPS: 42,
+  avgDwellTime: 25,
+  busiestStore: "Sucursal Centro",
+  busiestHour: "13:00",
+  activeQueues: 4,
+  criticalQueues: 1,
+  weeklyTrend: Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(Date.UTC(2026, 2, 26) - i * 86_400_000);
+    return { date: d.toISOString().slice(0, 10), visitors: 1400 + Math.round(Math.random() * 400) };
+  }).reverse(),
+};
+
+// =============================================================================
+// Analytics — Query Helpers
+// =============================================================================
+
+export function getTrafficForStore(storeId: string): TrafficByStore | undefined {
+  return trafficByStore.find((t) => t.storeId === storeId);
+}
+
+export function getQueuesForStore(storeId: string): QueuePoint[] {
+  return queuePoints.filter((q) => q.storeId === storeId);
+}
+
+export function getHeatmapForStore(storeId: string): StoreHeatmapData | undefined {
+  return storeHeatmaps.find((h) => h.storeId === storeId);
+}
+
+export function getJourneyForStore(storeId: string): JourneyData | undefined {
+  return journeyData.find((j) => j.storeId === storeId);
+}
+
+export function getNPSForStore(storeId: string): NPSData | undefined {
+  return npsData.find((n) => n.storeId === storeId);
+}
+
+export function getPerformanceForStore(storeId: string): StorePerformance | undefined {
+  return storePerformances.find((p) => p.storeId === storeId);
+}
 
 export const cameraTemplates: CameraTemplate[] = [
   {
