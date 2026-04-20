@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ChevronRight,
@@ -14,11 +14,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  stores,
-  alertEvents,
-  getCamerasForStore,
-} from "@/data/mock";
+import { useDataset } from "@/lib/dataset-context";
+import { CameraPlayer } from "@/components/video/CameraPlayer";
 import type { AlertEventStatus, AlertRuleType } from "@/lib/types";
 
 /* ------------------------------------------------------------------ */
@@ -70,9 +67,14 @@ const ruleTypeBadge: Record<AlertRuleType, string> = {
 /* ------------------------------------------------------------------ */
 
 export default function MultiStoreMonitorPage() {
+  const { stores, alertEvents, getCamerasForStore } = useDataset();
   const [selectedStoreIds, setSelectedStoreIds] = useState<Set<string>>(
     new Set(stores.map((s) => s.id))
   );
+
+  useEffect(() => {
+    setSelectedStoreIds(new Set(stores.map((s) => s.id)));
+  }, [stores]);
 
   function toggleStore(storeId: string) {
     setSelectedStoreIds((prev) => {
@@ -181,45 +183,14 @@ export default function MultiStoreMonitorPage() {
                   </Button>
                 </div>
 
-                {/* Compact camera thumbnails row */}
+                {/* Live camera grid */}
                 <div className="grid grid-cols-4 gap-3">
                   {storeCams.map((cam) => (
-                    <div
+                    <CameraPlayer
                       key={cam.id}
-                      className="relative rounded-lg bg-slate-900 aspect-video overflow-hidden border border-slate-700 group cursor-pointer"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={cam.thumbnailUrl ?? ""}
-                        alt={cam.name}
-                        className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity"
-                      />
-                      {/* Camera name */}
-                      <div className="absolute top-2 left-2 text-white text-[10px] font-medium bg-black/50 rounded px-1.5 py-0.5">
-                        {cam.name}
-                      </div>
-                      {/* Status badge */}
-                      {cam.status === "online" ? (
-                        <div className="absolute top-2 right-2">
-                          <span className="inline-flex items-center gap-1 rounded bg-red-600/90 px-1.5 py-0.5 text-[9px] font-bold text-white">
-                            <span className="h-1 w-1 rounded-full bg-white animate-pulse-live" />
-                            LIVE
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="absolute top-2 right-2">
-                          <span className="rounded bg-gray-600/90 px-1.5 py-0.5 text-[9px] font-bold text-white">
-                            OFF
-                          </span>
-                        </div>
-                      )}
-                      {/* Play overlay on hover */}
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <div className="h-8 w-8 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
-                          <Play className="h-4 w-4 text-white ml-0.5" />
-                        </div>
-                      </div>
-                    </div>
+                      rtspUrl={cam.rtspUrl}
+                      label={cam.name}
+                    />
                   ))}
                 </div>
               </section>

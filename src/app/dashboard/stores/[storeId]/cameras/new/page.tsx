@@ -22,7 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { stores, cameraTemplates } from "@/data/mock";
+import { cameraTemplates } from "@/data/mock";
+import { useDataset } from "@/lib/dataset-context";
 import type { CameraTemplate } from "@/lib/types";
 
 /* ── Page ────────────────────────────────────────────────────────── */
@@ -30,6 +31,7 @@ import type { CameraTemplate } from "@/lib/types";
 export default function AddCameraPage() {
   const params = useParams();
   const storeId = params.storeId as string;
+  const { stores } = useDataset();
   const store = stores.find((s) => s.id === storeId);
   const storeName = store?.name ?? "Unknown Store";
 

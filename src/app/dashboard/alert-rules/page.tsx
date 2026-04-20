@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Shield,
@@ -18,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { alertRules, cameras } from "@/data/mock";
+import { useDataset } from "@/lib/dataset-context";
 import type { AlertRuleType } from "@/lib/types";
 
 /* ── Helpers ────────────────────────────────────────────────────── */
@@ -63,11 +63,14 @@ function formatSchedule(scheduleJson: Record<string, unknown>): string {
   return `${start} - ${end} / ${dayCount === 7 ? "Every day" : `${dayCount} days/week`}`;
 }
 
-function getStoreCount(cameraIds: string[]): number {
+function getStoreCount(
+  cameraIds: string[],
+  allCameras: { id: string; storeId: string }[],
+): number {
   const storeIds = new Set(
-    cameras
+    allCameras
       .filter((c) => cameraIds.includes(c.id))
-      .map((c) => c.storeId)
+      .map((c) => c.storeId),
   );
   return storeIds.size;
 }
@@ -75,7 +78,9 @@ function getStoreCount(cameraIds: string[]): number {
 /* ── Page ────────────────────────────────────────────────────────── */
 
 export default function AlertRulesPage() {
+  const { alertRules, cameras } = useDataset();
   const [rules, setRules] = useState(alertRules);
+  useEffect(() => { setRules(alertRules); }, [alertRules]);
 
   const toggleRule = (ruleId: string) => {
     setRules((prev) =>
@@ -112,7 +117,7 @@ export default function AlertRulesPage() {
             const config = ruleTypeConfig[rule.type];
             const Icon = config.icon;
             const cameraIds = rule.cameras.map((c) => c.id);
-            const storeCount = getStoreCount(cameraIds);
+            const storeCount = getStoreCount(cameraIds, cameras);
 
             return (
               <div

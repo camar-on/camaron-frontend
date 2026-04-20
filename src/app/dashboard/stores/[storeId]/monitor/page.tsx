@@ -20,11 +20,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import {
-  getStoreById,
-  getCamerasForStore,
-  getAlertsForStore,
-} from "@/data/mock";
+import { useDataset } from "@/lib/dataset-context";
+import { CameraPlayer } from "@/components/video/CameraPlayer";
 import type { AlertEventStatus, AlertRuleType } from "@/lib/types";
 
 /* ------------------------------------------------------------------ */
@@ -65,7 +62,8 @@ type Layout = "2x2" | "1+3";
 export default function StoreMonitorPage() {
   const params = useParams();
   const storeId = params.storeId as string;
-  const store = getStoreById(storeId);
+  const { stores, getCamerasForStore, getAlertsForStore } = useDataset();
+  const store = stores.find((s) => s.id === storeId);
   const storeCameras = getCamerasForStore(storeId);
   const storeAlerts = getAlertsForStore(storeId);
 
@@ -157,31 +155,8 @@ export default function StoreMonitorPage() {
                 const cam = storeCameras.find((c) => c.id === expandedCam);
                 if (!cam) return null;
                 return (
-                  <div className="relative rounded-xl bg-slate-900 aspect-video overflow-hidden border border-slate-700">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={cam.thumbnailUrl ?? ""}
-                      alt={cam.name}
-                      className="w-full h-full object-cover opacity-80"
-                    />
-                    {/* Overlay: camera name */}
-                    <div className="absolute top-3 left-3 text-white text-sm font-medium bg-black/50 rounded px-2 py-0.5">
-                      {cam.name}
-                    </div>
-                    {/* LIVE badge */}
-                    <div className="absolute top-3 right-3">
-                      <span className="inline-flex items-center gap-1.5 rounded bg-red-600/90 px-2 py-0.5 text-[10px] font-bold text-white">
-                        <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse-live" />
-                        LIVE
-                      </span>
-                    </div>
-                    {/* Play overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="h-14 w-14 rounded-full bg-white/20 backdrop-blur flex items-center justify-center cursor-pointer hover:bg-white/30 transition-colors">
-                        <Play className="h-7 w-7 text-white ml-1" />
-                      </div>
-                    </div>
-                    {/* Collapse */}
+                  <div className="relative">
+                    <CameraPlayer rtspUrl={cam.rtspUrl} label={cam.name} />
                     <button
                       onClick={() => setExpandedCam(null)}
                       className="absolute bottom-3 right-3 p-1.5 rounded bg-black/50 text-white hover:bg-black/70 transition-colors"
@@ -208,46 +183,12 @@ export default function StoreMonitorPage() {
                 return (
                   <div
                     key={cam.id}
-                    className={`relative rounded-xl bg-slate-900 overflow-hidden border border-slate-700 cursor-pointer group ${
-                      isMainIn1Plus3
-                        ? "col-span-2 row-span-2 aspect-video"
-                        : "aspect-video"
+                    className={`relative cursor-pointer group ${
+                      isMainIn1Plus3 ? "col-span-2 row-span-2" : ""
                     }`}
                     onClick={() => setExpandedCam(cam.id)}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={cam.thumbnailUrl ?? ""}
-                      alt={cam.name}
-                      className="w-full h-full object-cover opacity-70 group-hover:opacity-90 transition-opacity"
-                    />
-                    {/* Camera name */}
-                    <div className="absolute top-3 left-3 text-white text-xs font-medium bg-black/50 rounded px-2 py-0.5">
-                      {cam.name}
-                    </div>
-                    {/* LIVE badge */}
-                    {cam.status === "online" && (
-                      <div className="absolute top-3 right-3">
-                        <span className="inline-flex items-center gap-1.5 rounded bg-red-600/90 px-2 py-0.5 text-[10px] font-bold text-white">
-                          <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse-live" />
-                          LIVE
-                        </span>
-                      </div>
-                    )}
-                    {cam.status === "offline" && (
-                      <div className="absolute top-3 right-3">
-                        <span className="inline-flex items-center gap-1.5 rounded bg-gray-600/90 px-2 py-0.5 text-[10px] font-bold text-white">
-                          OFFLINE
-                        </span>
-                      </div>
-                    )}
-                    {/* Play overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
-                        <Play className="h-6 w-6 text-white ml-0.5" />
-                      </div>
-                    </div>
-                    {/* Expand icon */}
+                    <CameraPlayer rtspUrl={cam.rtspUrl} label={cam.name} />
                     <button className="absolute bottom-3 right-3 p-1 rounded bg-black/50 text-white opacity-0 group-hover:opacity-100 transition-opacity">
                       <Maximize2 className="h-3.5 w-3.5" />
                     </button>

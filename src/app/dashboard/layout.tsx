@@ -5,6 +5,7 @@ import { TopBar } from "@/components/layout/TopBar";
 import { ChatPanel } from "@/components/agent/ChatPanel";
 import { VoiceOverlay } from "@/components/agent/VoiceOverlay";
 import { AgentProvider } from "@/lib/agent-context";
+import { DatasetProvider } from "@/lib/dataset-context";
 
 export default function DashboardLayout({
   children,
@@ -12,6 +13,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
+    <DatasetProvider>
     <AgentProvider>
       <div className="flex h-screen overflow-hidden">
         {/* Sidebar — fixed, scrolls internally */}
@@ -33,5 +35,6 @@ export default function DashboardLayout({
       <ChatPanel />
       <VoiceOverlay />
     </AgentProvider>
+    </DatasetProvider>
   );
 }

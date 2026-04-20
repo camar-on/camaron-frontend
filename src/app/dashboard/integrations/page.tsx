@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { integrations } from "@/data/mock";
+import { useDataset } from "@/lib/dataset-context";
 import type { IntegrationType, IntegrationStatus } from "@/lib/types";
 
 /* ── Config ─────────────────────────────────────────────────────── */
@@ -104,6 +104,7 @@ function statusBadge(status: IntegrationStatus, type: IntegrationType) {
 /* ── Page ────────────────────────────────────────────────────────── */
 
 export default function IntegrationsPage() {
+  const { integrations } = useDataset();
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-4xl px-6 py-10">

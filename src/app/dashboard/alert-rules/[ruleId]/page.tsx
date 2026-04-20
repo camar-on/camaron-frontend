@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { alertRules, cameras, stores, protocols } from "@/data/mock";
+import { useDataset } from "@/lib/dataset-context";
 import type { AlertRuleType } from "@/lib/types";
 
 /* ── Constants ──────────────────────────────────────────────────── */
@@ -78,7 +78,27 @@ export default function AlertRuleEditPage() {
   const params = useParams();
   const ruleId = params.ruleId as string;
   const isNew = ruleId === "new";
-  const existingRule = alertRules.find((r) => r.id === ruleId) ?? alertRules[0];
+  const { alertRules, cameras, stores, protocols } = useDataset();
+  const existingRule =
+    alertRules.find((r) => r.id === ruleId) ??
+    alertRules[0] ?? {
+      id: "",
+      orgId: "",
+      name: "",
+      description: "",
+      type: "custom" as const,
+      confidenceThreshold: 0.5,
+      cooldownSeconds: 60,
+      scheduleJson: {},
+      zoneConfigJson: null,
+      isActive: true,
+      createdAt: new Date().toISOString(),
+      cameras: [],
+      camerasCount: 0,
+      protocols: [],
+      protocolsCount: 0,
+    };
+  void cameras; void stores; void protocols;
 
   /* form state */
   const [name, setName] = useState(isNew ? "" : existingRule.name);

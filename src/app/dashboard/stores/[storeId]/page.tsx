@@ -23,12 +23,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import {
-  getStoreById,
-  getCamerasForStore,
-  getAlertsForStore,
-  getRulesForStore,
-} from "@/data/mock";
+import { useDataset } from "@/lib/dataset-context";
+import { CameraPlayer } from "@/components/video/CameraPlayer";
 import type { AlertEventStatus, AlertRuleType } from "@/lib/types";
 
 /* ------------------------------------------------------------------ */
@@ -86,7 +82,15 @@ const ruleTypeBadge: Record<AlertRuleType, string> = {
 export default function StoreDetailPage() {
   const params = useParams();
   const storeId = params.storeId as string;
-  const store = getStoreById(storeId);
+  const {
+    stores,
+    getCamerasForStore,
+    getAlertsForStore,
+    getRulesForStore,
+    isLoading,
+    isSeedMode,
+  } = useDataset();
+  const store = stores.find((s) => s.id === storeId);
   const storeCameras = getCamerasForStore(storeId);
   const storeAlerts = getAlertsForStore(storeId).slice(0, 10);
   const storeRules = getRulesForStore(storeId);
@@ -94,7 +98,11 @@ export default function StoreDetailPage() {
   if (!store) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[hsl(210,40%,98%)]">
-        <p className="text-muted-foreground text-lg">Store not found.</p>
+        <p className="text-muted-foreground text-lg">
+          {isLoading && isSeedMode
+            ? "Loading store…"
+            : "Store not found."}
+        </p>
       </div>
     );
   }
@@ -160,15 +168,9 @@ export default function StoreDetailPage() {
               key={cam.id}
               className="border bg-white rounded-xl shadow-none overflow-hidden"
             >
-              {/* Thumbnail */}
-              <div className="relative aspect-video bg-slate-100">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={cam.thumbnailUrl ?? ""}
-                  alt={cam.name}
-                  className="w-full h-full object-cover"
-                />
-                {/* Status overlay */}
+              {/* Live stream */}
+              <div className="relative">
+                <CameraPlayer rtspUrl={cam.rtspUrl} label={cam.name} />
                 <div className="absolute top-3 right-3">
                   <Badge
                     className={`text-xs font-medium border ${

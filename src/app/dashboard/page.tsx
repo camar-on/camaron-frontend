@@ -23,13 +23,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import {
-  dashboardStats,
-  alertEvents,
-  stores,
-  getCamerasForStore,
-  mockUser,
-} from "@/data/mock";
+import { useDataset } from "@/lib/dataset-context";
 import type { AlertEventStatus, AlertRuleType } from "@/lib/types";
 
 /* ------------------------------------------------------------------ */
@@ -80,6 +74,13 @@ const ruleTypeBadge: Record<AlertRuleType, string> = {
 /* ------------------------------------------------------------------ */
 
 export default function DashboardPage() {
+  const {
+    currentUser,
+    dashboardStats,
+    alertEvents,
+    stores,
+    getCamerasForStore,
+  } = useDataset();
   const recentAlerts = alertEvents.slice(0, 8);
 
   return (
@@ -87,7 +88,7 @@ export default function DashboardPage() {
       {/* Greeting --------------------------------------------------- */}
       <div className="mb-10">
         <h1 className="text-3xl font-semibold text-foreground">
-          {getGreeting()}, {mockUser.name}
+          {getGreeting()}, {currentUser.name}
         </h1>
         <p className="mt-1 text-muted-foreground">
           Here is what is happening across your stores today.

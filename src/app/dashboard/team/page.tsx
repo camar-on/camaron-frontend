@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { members } from "@/data/mock";
+import { useDataset } from "@/lib/dataset-context";
 import type { MemberRole } from "@/lib/types";
 
 /* ── Role config ────────────────────────────────────────────────── */
@@ -60,12 +60,13 @@ function getInitials(name: string | null, email: string): string {
       .toUpperCase()
       .slice(0, 2);
   }
-  return email[0].toUpperCase();
+  return (email?.[0] ?? "?").toUpperCase();
 }
 
 /* ── Page ────────────────────────────────────────────────────────── */
 
 export default function TeamPage() {
+  const { members } = useDataset();
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-4xl px-6 py-10">

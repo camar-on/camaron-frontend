@@ -26,8 +26,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { mockUser, mockNotifications } from "@/data/mock";
+import { mockNotifications } from "@/data/mock";
 import { useAgent } from "@/lib/agent-context";
+import { useDataset } from "@/lib/dataset-context";
 
 // ── Breadcrumb label resolver ─────────────────
 
@@ -64,6 +65,7 @@ export function TopBar() {
   const breadcrumbs = resolveBreadcrumbs(pathname);
   const unreadCount = mockNotifications.filter((n) => !n.read).length;
   const { toggleChat, openVoice, chatOpen } = useAgent();
+  const { currentUser } = useDataset();
 
   return (
     <header className="flex h-14 shrink-0 items-center justify-between border-b bg-white px-6">
@@ -155,11 +157,11 @@ export function TopBar() {
             >
               <Avatar className="h-7 w-7">
                 <AvatarFallback className="text-xs font-medium">
-                  {mockUser.initials}
+                  {currentUser.initials}
                 </AvatarFallback>
               </Avatar>
               <span className="hidden text-sm font-medium md:inline-block">
-                {mockUser.name}
+                {currentUser.name}
               </span>
             </Button>
           </DropdownMenuTrigger>
@@ -167,9 +169,9 @@ export function TopBar() {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col gap-1">
-                <p className="text-sm font-medium">{mockUser.name}</p>
+                <p className="text-sm font-medium">{currentUser.name}</p>
                 <p className="text-xs text-muted-foreground">
-                  {mockUser.email}
+                  {currentUser.email}
                 </p>
               </div>
             </DropdownMenuLabel>

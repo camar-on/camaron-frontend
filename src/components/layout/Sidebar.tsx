@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { mockStores } from "@/data/mock";
+import { useDataset } from "@/lib/dataset-context";
 
 // ── Navigation item types ─────────────────────
 
@@ -61,6 +61,7 @@ const bottomNav: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { legacyStores: sidebarStores } = useDataset();
 
   function isActive(href: string) {
     if (href === "/dashboard") return pathname === "/dashboard";
@@ -103,7 +104,7 @@ export function Sidebar() {
             Stores
           </span>
 
-          {mockStores.map((store) => {
+          {sidebarStores.map((store) => {
             const href = `/dashboard/stores/${store.id}`;
             return (
               <Link

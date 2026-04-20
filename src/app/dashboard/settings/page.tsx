@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Building2,
   CreditCard,
@@ -15,14 +15,21 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { organization, notificationSettings } from "@/data/mock";
+import { useDataset } from "@/lib/dataset-context";
 
 /* ── Page ────────────────────────────────────────────────────────── */
 
 export default function SettingsPage() {
+  const { organization, notificationSettings } = useDataset();
   const [orgName, setOrgName] = useState(organization.name);
   const [orgSlug, setOrgSlug] = useState(organization.slug);
   const [notifications, setNotifications] = useState(notificationSettings);
+
+  useEffect(() => {
+    setOrgName(organization.name);
+    setOrgSlug(organization.slug);
+    setNotifications(notificationSettings);
+  }, [organization, notificationSettings]);
 
   const toggleNotification = (
     key: keyof typeof notificationSettings

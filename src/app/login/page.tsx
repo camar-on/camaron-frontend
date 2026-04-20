@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Mail, Loader2, CheckCircle2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Mail, Loader2, CheckCircle2, Radio } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { setMode, clearMode } from "@/lib/demo-mode";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -19,6 +22,16 @@ export default function LoginPage() {
       setLoading(false);
       setSent(true);
     }, 1500);
+  };
+
+  const handleDemo = () => {
+    clearMode();
+    router.push("/dashboard");
+  };
+
+  const handleSeed = () => {
+    setMode("seed");
+    router.push("/dashboard");
   };
 
   return (
@@ -81,13 +94,34 @@ export default function LoginPage() {
                 </Button>
               </form>
 
-              <div className="mt-4 text-center">
-                <Link
-                  href="/dashboard"
-                  className="text-xs text-primary hover:underline"
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-[11px] uppercase tracking-wide">
+                  <span className="bg-white px-2 text-muted-foreground">
+                    o
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleSeed}
                 >
-                  Saltar al demo →
-                </Link>
+                  <Radio className="mr-2 h-4 w-4 text-primary" />
+                  Entrar con cuenta seed (streams en vivo)
+                </Button>
+                <button
+                  type="button"
+                  onClick={handleDemo}
+                  className="w-full text-center text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Saltar al demo (datos mock) →
+                </button>
               </div>
             </>
           ) : (
