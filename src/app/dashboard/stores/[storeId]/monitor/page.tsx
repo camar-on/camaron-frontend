@@ -7,7 +7,6 @@ import {
   ChevronRight,
   Grid2X2,
   LayoutPanelLeft,
-  Play,
   Check,
   X,
   Eye,

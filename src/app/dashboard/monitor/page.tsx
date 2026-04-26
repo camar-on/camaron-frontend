@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   ChevronRight,
   Monitor,
-  Play,
   Check,
   X,
   Eye,

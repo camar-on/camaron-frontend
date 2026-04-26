@@ -140,7 +140,7 @@ export default function AlertRuleEditPage() {
       grouped.set(cam.storeId, list);
     });
     return grouped;
-  }, []);
+  }, [cameras]);
 
   /* schedule toggle */
   const toggleScheduleCell = (dayIdx: number, hourIdx: number) => {
