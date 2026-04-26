@@ -1,0 +1,162 @@
+name: deploy
+
+# Self-provisioning deploy for the web-frontend repo.
+# First run creates the S3 bucket + CloudFront distribution. Every run
+# after that just builds, syncs to S3, and invalidates CloudFront.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION }}
+  ENV_NAME:   ${{ vars.ENV_NAME }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region:     ${{ env.AWS_REGION }}
+
+      - name: Resolve account id and resource names
+        id: names
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          BUCKET="camaron-frontend-${ENV_NAME}-${ACCOUNT_ID}"
+          DIST_COMMENT="camaron-frontend-${ENV_NAME}"
+          {
+            echo "account_id=$ACCOUNT_ID"
+            echo "bucket=$BUCKET"
+            echo "dist_comment=$DIST_COMMENT"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install + static export
+        env:
+          NEXT_PUBLIC_BACKEND_URL:              ${{ vars.NEXT_PUBLIC_BACKEND_URL }}
+          NEXT_PUBLIC_MEDIAMTX_BASE_URL:        ${{ vars.NEXT_PUBLIC_MEDIAMTX_BASE_URL }}
+          NEXT_PUBLIC_MEDIAMTX_WEBRTC_BASE_URL: ${{ vars.NEXT_PUBLIC_MEDIAMTX_WEBRTC_BASE_URL }}
+        run: |
+          npm ci
+          # Static export so the build works on S3 + CloudFront.
+          # Requires `output: 'export'` in next.config.mjs.
+          npm run build
+          test -d out || (echo "::error::expected next 'out/' from static export — set output:'export' in next.config.mjs" && exit 1)
+
+      - name: Ensure S3 bucket
+        run: |
+          BUCKET="${{ steps.names.outputs.bucket }}"
+          if ! aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
+            echo "creating $BUCKET"
+            if [[ "$AWS_REGION" == "us-east-1" ]]; then
+              aws s3api create-bucket --bucket "$BUCKET" --region "$AWS_REGION"
+            else
+              aws s3api create-bucket --bucket "$BUCKET" --region "$AWS_REGION" \
+                --create-bucket-configuration "LocationConstraint=$AWS_REGION"
+            fi
+            aws s3api put-bucket-encryption --bucket "$BUCKET" \
+              --server-side-encryption-configuration \
+              '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
+            aws s3api put-public-access-block --bucket "$BUCKET" \
+              --public-access-block-configuration \
+              'BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true'
+            aws s3api put-bucket-tagging --bucket "$BUCKET" \
+              --tagging "TagSet=[{Key=camaron,Value=${ENV_NAME}},{Key=role,Value=frontend}]"
+          fi
+
+      - name: Ensure CloudFront distribution + Origin Access Control
+        id: cf
+        run: |
+          BUCKET="${{ steps.names.outputs.bucket }}"
+          COMMENT="${{ steps.names.outputs.dist_comment }}"
+          ACCOUNT_ID="${{ steps.names.outputs.account_id }}"
+          ORIGIN_DOMAIN="${BUCKET}.s3.${AWS_REGION}.amazonaws.com"
+
+          OAC_ID=$(aws cloudfront list-origin-access-controls \
+            --query "OriginAccessControlList.Items[?Name=='${COMMENT}-oac'].Id | [0]" --output text)
+          if [[ -z "$OAC_ID" || "$OAC_ID" == "None" ]]; then
+            OAC_ID=$(aws cloudfront create-origin-access-control \
+              --origin-access-control-config "Name=${COMMENT}-oac,SigningProtocol=sigv4,SigningBehavior=always,OriginAccessControlOriginType=s3" \
+              --query 'OriginAccessControl.Id' --output text)
+          fi
+
+          DIST_ID=$(aws cloudfront list-distributions \
+            --query "DistributionList.Items[?Comment=='${COMMENT}'].Id | [0]" --output text)
+          if [[ -z "$DIST_ID" || "$DIST_ID" == "None" ]]; then
+            CALLER="${COMMENT}-$(date +%s)"
+            cat > /tmp/cf.json <<JSON
+          {
+            "CallerReference": "${CALLER}",
+            "Comment":         "${COMMENT}",
+            "Enabled":         true,
+            "DefaultRootObject":"index.html",
+            "Origins": { "Quantity": 1, "Items": [{
+              "Id": "frontend",
+              "DomainName": "${ORIGIN_DOMAIN}",
+              "OriginAccessControlId": "${OAC_ID}",
+              "S3OriginConfig": { "OriginAccessIdentity": "" }
+            }]},
+            "DefaultCacheBehavior": {
+              "TargetOriginId": "frontend",
+              "ViewerProtocolPolicy": "redirect-to-https",
+              "AllowedMethods": { "Quantity": 2, "Items": ["GET","HEAD"] },
+              "ForwardedValues": { "QueryString": false, "Cookies": { "Forward": "none" } },
+              "MinTTL": 0
+            },
+            "CustomErrorResponses": { "Quantity": 1, "Items": [
+              { "ErrorCode": 403, "ResponsePagePath": "/index.html", "ResponseCode": "200", "ErrorCachingMinTTL": 0 }
+            ]},
+            "PriceClass": "PriceClass_100"
+          }
+          JSON
+            DIST_ID=$(aws cloudfront create-distribution --distribution-config file:///tmp/cf.json --query 'Distribution.Id' --output text)
+          fi
+
+          DIST_ARN="arn:aws:cloudfront::${ACCOUNT_ID}:distribution/${DIST_ID}"
+          aws s3api put-bucket-policy --bucket "$BUCKET" --policy "$(cat <<JSON
+          {"Version":"2012-10-17","Statement":[{
+            "Sid":"AllowCloudFrontRead",
+            "Effect":"Allow",
+            "Principal":{"Service":"cloudfront.amazonaws.com"},
+            "Action":"s3:GetObject",
+            "Resource":"arn:aws:s3:::${BUCKET}/*",
+            "Condition":{"StringEquals":{"AWS:SourceArn":"${DIST_ARN}"}}
+          }]}
+          JSON
+          )"
+
+          DIST_DOMAIN=$(aws cloudfront get-distribution --id "$DIST_ID" --query 'Distribution.DomainName' --output text)
+          {
+            echo "dist_id=$DIST_ID"
+            echo "dist_domain=$DIST_DOMAIN"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Sync build to S3
+        run: |
+          aws s3 sync ./out "s3://${{ steps.names.outputs.bucket }}/" \
+            --delete --cache-control "public,max-age=31536000,immutable"
+          aws s3 cp "s3://${{ steps.names.outputs.bucket }}/index.html" \
+            "s3://${{ steps.names.outputs.bucket }}/index.html" \
+            --metadata-directive REPLACE --cache-control "no-cache, no-store, must-revalidate"
+
+      - name: Invalidate CloudFront
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ steps.cf.outputs.dist_id }}" --paths "/*"
+
+      - name: Print URL
+        run: echo "https://${{ steps.cf.outputs.dist_domain }}"
