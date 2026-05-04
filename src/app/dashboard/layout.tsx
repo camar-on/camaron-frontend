@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopBar } from "@/components/layout/TopBar";
 import { ChatPanel } from "@/components/agent/ChatPanel";
@@ -17,7 +18,9 @@ export default function DashboardLayout({
     <AgentProvider>
       <div className="flex h-screen overflow-hidden">
         {/* Sidebar — fixed, scrolls internally */}
-        <Sidebar />
+        <Suspense fallback={null}>
+          <Sidebar />
+        </Suspense>
 
         {/* Main content area */}
         <div className="flex flex-1 flex-col overflow-hidden">

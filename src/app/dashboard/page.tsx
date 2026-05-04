@@ -284,13 +284,13 @@ export default function DashboardPage() {
 
                 <div className="flex items-center gap-3">
                   <Button variant="outline" size="sm" asChild>
-                    <Link href={`/dashboard/stores/${store.id}`}>
+                    <Link href={`/dashboard/stores/detail?id=${store.id}`}>
                       <Eye className="mr-1.5 h-3.5 w-3.5" />
                       View
                     </Link>
                   </Button>
                   <Button variant="outline" size="sm" asChild>
-                    <Link href={`/dashboard/stores/${store.id}/monitor`}>
+                    <Link href={`/dashboard/stores/detail/monitor?id=${store.id}`}>
                       <Monitor className="mr-1.5 h-3.5 w-3.5" />
                       Monitor
                     </Link>

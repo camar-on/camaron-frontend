@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   ChevronRight,
   Grid2X2,
@@ -59,8 +59,8 @@ const ruleTypeLabel: Record<AlertRuleType, string> = {
 type Layout = "2x2" | "1+3";
 
 export default function StoreMonitorPage() {
-  const params = useParams();
-  const storeId = params.storeId as string;
+  const searchParams = useSearchParams();
+  const storeId = searchParams.get("id") ?? "";
   const { stores, getCamerasForStore, getAlertsForStore } = useDataset();
   const store = stores.find((s) => s.id === storeId);
   const storeCameras = getCamerasForStore(storeId);
@@ -97,7 +97,7 @@ export default function StoreMonitorPage() {
           </Link>
           <ChevronRight className="h-3.5 w-3.5" />
           <Link
-            href={`/dashboard/stores/${storeId}`}
+            href={`/dashboard/stores/detail?id=${storeId}`}
             className="hover:text-foreground transition-colors"
           >
             {store.name}

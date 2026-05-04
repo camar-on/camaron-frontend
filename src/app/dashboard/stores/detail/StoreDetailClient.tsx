@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   MapPin,
   Clock,
@@ -80,8 +80,8 @@ const ruleTypeBadge: Record<AlertRuleType, string> = {
 /* ------------------------------------------------------------------ */
 
 export default function StoreDetailPage() {
-  const params = useParams();
-  const storeId = params.storeId as string;
+  const searchParams = useSearchParams();
+  const storeId = searchParams.get("id") ?? "";
   const {
     stores,
     getCamerasForStore,
@@ -204,7 +204,7 @@ export default function StoreDetailPage() {
                   </Button>
                   <Button variant="outline" size="sm" asChild>
                     <Link
-                      href={`/dashboard/stores/${storeId}/monitor`}
+                      href={`/dashboard/stores/detail/monitor?id=${storeId}`}
                     >
                       <Play className="mr-1.5 h-3.5 w-3.5" />
                       Watch

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   Wifi,
@@ -29,8 +29,8 @@ import type { CameraTemplate } from "@/lib/types";
 /* ── Page ────────────────────────────────────────────────────────── */
 
 export default function AddCameraPage() {
-  const params = useParams();
-  const storeId = params.storeId as string;
+  const searchParams = useSearchParams();
+  const storeId = searchParams.get("id") ?? "";
   const { stores } = useDataset();
   const store = stores.find((s) => s.id === storeId);
   const storeName = store?.name ?? "Unknown Store";
@@ -96,7 +96,7 @@ export default function AddCameraPage() {
       <div className="mx-auto max-w-3xl px-6 py-10">
         {/* Back link */}
         <Link
-          href={`/dashboard/stores/${storeId}`}
+          href={`/dashboard/stores/detail?id=${storeId}`}
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-6"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -385,7 +385,7 @@ export default function AddCameraPage() {
           {/* ── Actions ───────────────────────────────────────── */}
           <div className="flex items-center justify-end gap-3 pb-8">
             <Button variant="outline" asChild>
-              <Link href={`/dashboard/stores/${storeId}`}>Cancel</Link>
+              <Link href={`/dashboard/stores/detail?id=${storeId}`}>Cancel</Link>
             </Button>
             <Button disabled={!cameraName.trim()}>Add Camera</Button>
           </div>

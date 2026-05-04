@@ -175,7 +175,7 @@ export default function MultiStoreMonitorPage() {
                     </span>
                   </div>
                   <Button variant="ghost" size="sm" asChild>
-                    <Link href={`/dashboard/stores/${store.id}/monitor`}>
+                    <Link href={`/dashboard/stores/detail/monitor?id=${store.id}`}>
                       Open full view
                       <ChevronRight className="ml-1 h-3.5 w-3.5" />
                     </Link>

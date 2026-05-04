@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   LayoutDashboard,
   Monitor,
@@ -61,6 +61,8 @@ const bottomNav: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const activeStoreId = searchParams.get("id");
   const { legacyStores: sidebarStores } = useDataset();
 
   function isActive(href: string) {
@@ -105,7 +107,10 @@ export function Sidebar() {
           </span>
 
           {sidebarStores.map((store) => {
-            const href = `/dashboard/stores/${store.id}`;
+            const href = `/dashboard/stores/detail?id=${store.id}`;
+            const active =
+              pathname.startsWith("/dashboard/stores/detail") &&
+              activeStoreId === store.id;
             return (
               <Link
                 key={store.id}
@@ -113,8 +118,7 @@ export function Sidebar() {
                 className={cn(
                   "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
                   "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                  isActive(href) &&
-                    "bg-accent font-medium text-accent-foreground"
+                  active && "bg-accent font-medium text-accent-foreground"
                 )}
               >
                 <Building2 className="h-4 w-4 shrink-0" />
